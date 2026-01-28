@@ -22,7 +22,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=dokploy-network"
-      - "traefik.http.routers.odoo19.rule=${HOST_URL}"
+      - "traefik.http.routers.odoo19.rule=${odoo19.mykargolink.com}"
       - "traefik.http.routers.odoo19.entrypoints=websecure"
       - "traefik.http.routers.odoo19.tls.certresolver=letsencrypt"
       - "traefik.http.routers.odoo19.service=odoo"
