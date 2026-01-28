@@ -4,8 +4,9 @@ services:
     image: odoo:19.0
     restart: unless-stopped
     ports:
-      - "9002:8069"
+      - "9002:8443"
     environment:
+      - ENABLE_HTTPS=true
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=odoo
