@@ -27,7 +27,7 @@ services:
       - "traefik.http.routers.odoo19.tls.certresolver=letsencrypt"
       - "traefik.http.routers.odoo19.service=odoo"
       - "traefik.http.services.odoo.loadbalancer.server.port=8069"
-      - "traefik.http.routers.odoo19-ws.rule=${HOST_URL} && PathPrefix(`/websocket`)"
+      - "traefik.http.routers.odoo19-ws.rule=${odoo19.mykargolink.com} && PathPrefix(`/websocket`)"
       - "traefik.http.routers.odoo19-ws.entrypoints=websecure"
       - "traefik.http.routers.odoo19-ws.tls.certresolver=letsencrypt"
       - "traefik.http.routers.odoo19-ws.service=odoo-ws"
