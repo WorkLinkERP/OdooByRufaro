@@ -1,18 +1,46 @@
+version: '3.8'
+
 services:
-  # Odoo server
+  # Traefik reverse proxy (MUST BE ADDED FIRST)
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=rue.shasha@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik-data/letsencrypt:/letsencrypt"
+    networks:
+      - dokploy-network
+
+  
   odoo:
     container_name: odoo
     image: odoo:19.0
     restart: unless-stopped
-    ports:
-      - "9002:8069"
-    #   - "8072:8072"
+    # 🚫 REMOVE port 9002 - Traefik handles routing
+    # ports:
+    #   - "9002:8069"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=odoo
       - DB_PASSWORD=odoo
       - DB_NAME=postgres
+      - PROXY_MODE=true  # 🔄 ADDED for reverse proxy
     links:
       - odoodb:db
     volumes:
@@ -21,34 +49,21 @@ services:
       - ./odoo_config/custom-addons:/mnt/extra-addons
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=dokploy-network"
-      - "traefik.http.routers.odoo19.rule=Host(`odoo19.mykargolink.com`)"
-      - "traefik.http.routers.odoo19.entrypoints=websecure"
-      - "traefik.http.routers.odoo19.tls=true"
-      - "traefik.http.routers.odoo19.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.odoo19.service=odoo"
+      # 🧹 SIMPLIFIED labels (removed unnecessary ones)
+      - "traefik.http.routers.odoo.rule=Host(`odoo19.mykargolink.com`)"
+      - "traefik.http.routers.odoo.entrypoints=websecure"
+      - "traefik.http.routers.odoo.tls.certresolver=letsencrypt"
       - "traefik.http.services.odoo.loadbalancer.server.port=8069"
-      - "traefik.http.routers.odoo19-ws.rule=Host(`odoo19.mykargolink.com`) && PathPrefix(`/websocket`)"
-      - "traefik.http.routers.odoo19-ws.entrypoints=websecure"
-      - "traefik.http.routers.odoo19-ws.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.odoo19-ws.service=odoo-ws"
-      - "traefik.http.services.odoo-ws.loadbalancer.server.port=8072"
-      - "traefik.http.middlewares.https_redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.https_redirect.redirectscheme.permanent=true"
-      - "traefik.http.middlewares.gzip.compress=true"
-      - "traefik.http.routers.odoo19.middlewares=gzip,https_redirect"
     depends_on:
       - odoodb
     networks:
       - dokploy-network
 
-  # Odoo database
+  # Odoo database (UNCHANGED)
   odoodb:
     container_name: odoodb
     image: postgres:16
     restart: unless-stopped
-    # ports:
-    #   - 5433:5432 
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=odoo
@@ -82,7 +97,8 @@ volumes:
     name: odoo19-data
   pgadmin-data:
     name: pgadmin-data
+
 networks:
   dokploy-network:
     name: dokploy-network
-    external: True
+    external: true
