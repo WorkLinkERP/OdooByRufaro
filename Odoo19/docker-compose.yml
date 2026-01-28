@@ -1,19 +1,17 @@
-# Odoo server
+services:
   odoo:
     container_name: odoo
     image: odoo:19.0
     restart: unless-stopped
     ports:
       - "9002:8069"
-    #   - "8072:8072"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=odoo
       - DB_PASSWORD=odoo
       - DB_NAME=postgres
-    links:
-      - odoodb:db
+      - HOST_URL=odoo19.mykargolink.com
     volumes:
       - odoo19-data:/var/lib/odoo
       - ./odoo_config/conf:/etc/odoo
@@ -23,7 +21,6 @@
       - "traefik.docker.network=dokploy-network"
       - "traefik.http.routers.odoo19.rule=Host(`odoo19.mykargolink.com`)"
       - "traefik.http.routers.odoo19.entrypoints=websecure"
-      - "traefik.http.routers.odoo19.tls=true"
       - "traefik.http.routers.odoo19.tls.certresolver=letsencrypt"
       - "traefik.http.routers.odoo19.service=odoo"
       - "traefik.http.services.odoo.loadbalancer.server.port=8069"
@@ -41,13 +38,10 @@
     networks:
       - dokploy-network
 
-  # Odoo database
   odoodb:
     container_name: odoodb
     image: postgres:16
     restart: unless-stopped
-    # ports:
-    #   - 5433:5432 
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=odoo
@@ -78,10 +72,8 @@
 volumes:
   dbdata:
   odoo19-data:
-    name: odoo19-data
   pgadmin-data:
-    name: pgadmin-data
+
 networks:
   dokploy-network:
-    name: dokploy-network
-    external: True
+    external: true
