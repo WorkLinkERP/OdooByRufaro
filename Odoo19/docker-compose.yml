@@ -1,5 +1,5 @@
 services:
-  # Odoo server - WORKING VERSION
+  # Odoo server
   odoo:
     container_name: odoo
     image: odoo:19.0
@@ -12,42 +12,34 @@ services:
       - DB_USER=odoo
       - DB_PASSWORD=odoo
       - DB_NAME=postgres
+    links:
+      - odoodb:db
     volumes:
       - odoo19-data:/var/lib/odoo
       - ./odoo_config/conf:/etc/odoo
       - ./odoo_config/custom-addons:/mnt/extra-addons
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.odoo19.rule=Host(`odoo19.mykargolink.com`)"
+      - "traefik.http.routers.odoo19.entrypoints=websecure"
+      - "traefik.http.routers.odoo19.tls=true"
+      - "traefik.http.routers.odoo19.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.odoo19.service=odoo"
+      - "traefik.http.services.odoo.loadbalancer.server.port=8069"
+      - "traefik.http.routers.odoo19-ws.rule=Host(`odoo19.mykargolink.com`) && PathPrefix(`/websocket`)"
+      - "traefik.http.routers.odoo19-ws.entrypoints=websecure"
+      - "traefik.http.routers.odoo19-ws.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.odoo19-ws.service=odoo-ws"
+      - "traefik.http.services.odoo-ws.loadbalancer.server.port=8072"
+      - "traefik.http.middlewares.https_redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https_redirect.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.gzip.compress=true"
+      - "traefik.http.routers.odoo19.middlewares=gzip,https_redirect"
+      - "traefik.http.routers.odoo19-http.rule=Host(`odoo19.mykargolink.com`)"
+      - "traefik.http.routers.odoo19-http.entrypoints=web"
+      - "traefik.http.routers.odoo19-http.middlewares=https_redirect"
     depends_on:
       - odoodb
-
-  # Odoo database
-  odoodb:
-    container_name: odoodb
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_PASSWORD=odoo
-      - POSTGRES_USER=odoo
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - dbdata:/var/lib/postgresql/data/pgdata
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4:8
-    restart: unless-stopped
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      - odoodb
-
-volumes:
-  dbdata:
-  odoo19-data:
-  pgadmin-data:
+    networks:
+      - dokploy-network
