@@ -1,30 +1,5 @@
 services:
-  # Traefik for HTTPS
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik
-    restart: unless-stopped
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=rue.shasha@gmail.com"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik-data/letsencrypt:/letsencrypt"
-    networks:
-      - dokploy-network
-
-  # Odoo server
+  # Odoo server - WORKING VERSION
   odoo:
     container_name: odoo
     image: odoo:19.0
@@ -37,23 +12,12 @@ services:
       - DB_USER=odoo
       - DB_PASSWORD=odoo
       - DB_NAME=postgres
-      - PROXY_MODE=true
-    links:
-      - odoodb:db
     volumes:
       - odoo19-data:/var/lib/odoo
       - ./odoo_config/conf:/etc/odoo
       - ./odoo_config/custom-addons:/mnt/extra-addons
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.odoo.rule=Host(`odoo19.mykargolink.com`)"
-      - "traefik.http.routers.odoo.entrypoints=websecure"
-      - "traefik.http.routers.odoo.tls.certresolver=letsencrypt"
-      - "traefik.http.services.odoo.loadbalancer.server.port=8069"
     depends_on:
       - odoodb
-    networks:
-      - dokploy-network
 
   # Odoo database
   odoodb:
@@ -67,8 +31,6 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - dbdata:/var/lib/postgresql/data/pgdata
-    networks:
-      - dokploy-network
 
   pgadmin:
     container_name: pgadmin
@@ -84,14 +46,8 @@ services:
       - pgadmin-data:/var/lib/pgadmin
     depends_on:
       - odoodb
-    networks:
-      - dokploy-network
 
 volumes:
   dbdata:
   odoo19-data:
   pgadmin-data:
-
-networks:
-  dokploy-network:
-    external: True
