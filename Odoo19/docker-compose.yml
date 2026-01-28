@@ -1,54 +1,53 @@
-services:
-  # TRAEFIK CONTAINER (WAS MISSING!)
-  traefik:
-    image: traefik:v3.0
-    container_name: traefik
-    restart: unless-stopped
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-    ports:
-      - "8080:80"      # Changed from 80:80 to avoid conflict
-      - "8443:443"     # Changed from 443:443 to avoid conflict
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - odoo-network
-
-  # Odoo server
+# Odoo server
   odoo:
     container_name: odoo
     image: odoo:19.0
     restart: unless-stopped
     ports:
       - "9002:8069"
+    #   - "8072:8072"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=odoo
       - DB_PASSWORD=odoo
       - DB_NAME=postgres
+    links:
+      - odoodb:db
     volumes:
       - odoo19-data:/var/lib/odoo
       - ./odoo_config/conf:/etc/odoo
       - ./odoo_config/custom-addons:/mnt/extra-addons
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.odoo.rule=Host(`odoo19.mykargolink.com`)"
-      - "traefik.http.routers.odoo.entrypoints=web"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.odoo19.rule=Host(`odoo19.mykargolink.com`)"
+      - "traefik.http.routers.odoo19.entrypoints=websecure"
+      - "traefik.http.routers.odoo19.tls=true"
+      - "traefik.http.routers.odoo19.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.odoo19.service=odoo"
       - "traefik.http.services.odoo.loadbalancer.server.port=8069"
+      - "traefik.http.routers.odoo19-ws.rule=Host(`odoo19.mykargolink.com`) && PathPrefix(`/websocket`)"
+      - "traefik.http.routers.odoo19-ws.entrypoints=websecure"
+      - "traefik.http.routers.odoo19-ws.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.odoo19-ws.service=odoo-ws"
+      - "traefik.http.services.odoo-ws.loadbalancer.server.port=8072"
+      - "traefik.http.middlewares.https_redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https_redirect.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.gzip.compress=true"
+      - "traefik.http.routers.odoo19.middlewares=gzip,https_redirect"
     depends_on:
       - odoodb
     networks:
-      - odoo-network
+      - dokploy-network
 
   # Odoo database
   odoodb:
     container_name: odoodb
     image: postgres:16
     restart: unless-stopped
+    # ports:
+    #   - 5433:5432 
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_PASSWORD=odoo
@@ -57,7 +56,7 @@ services:
     volumes:
       - dbdata:/var/lib/postgresql/data/pgdata
     networks:
-      - odoo-network
+      - dokploy-network
 
   pgadmin:
     container_name: pgadmin
@@ -74,13 +73,15 @@ services:
     depends_on:
       - odoodb
     networks:
-      - odoo-network
+      - dokploy-network
 
 volumes:
   dbdata:
   odoo19-data:
+    name: odoo19-data
   pgadmin-data:
-
+    name: pgadmin-data
 networks:
-  odoo-network:
-    driver: bridge
+  dokploy-network:
+    name: dokploy-network
+    external: True
