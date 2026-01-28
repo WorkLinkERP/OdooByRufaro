@@ -1,5 +1,3 @@
-  version: '3.8'
-
 services:
   # Traefik for HTTPS
   traefik:
@@ -32,7 +30,7 @@ services:
     image: odoo:19.0
     restart: unless-stopped
     ports:
-      - "9002:8069"  # Keep for HTTP access
+      - "9002:8069"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -92,11 +90,8 @@ services:
 volumes:
   dbdata:
   odoo19-data:
-    name: odoo19-data
   pgadmin-data:
-    name: pgadmin-data
 
 networks:
   dokploy-network:
-    name: dokploy-network
-    external: True
+    external: true
