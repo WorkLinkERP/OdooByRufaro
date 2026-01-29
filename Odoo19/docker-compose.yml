@@ -7,7 +7,7 @@ services:
      # - "9002:8443"
     environment:
       - ENABLE_HTTPS=true
-      - DB_HOST=db
+      - DB_HOST=odoodb
       - DB_PORT=5432
       - DB_USER=odoo
       - DB_PASSWORD=odoo
