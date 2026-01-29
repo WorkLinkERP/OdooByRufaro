@@ -44,21 +44,10 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      # ✅ EXISTING LINES:
       - POSTGRES_DB=odoo19
       - POSTGRES_PASSWORD=odoo
       - POSTGRES_USER=odoo
       - PGDATA=/var/lib/postgresql/data/pgdata
-      # ✅ ADDED OPTION C LINES:
-      - POSTGRES_HOST_AUTH_METHOD=trust
-      - POSTGRES_INITDB_ARGS=--auth-host=trust
-    # ✅ ADDED COMMAND LINE:
-    command: >
-      /bin/bash -c "
-      echo 'Creating odoo19 database...'
-      createdb -U odoo odoo19 2>/dev/null || echo 'Database may already exist'
-      exec docker-entrypoint.sh postgres
-      "
     volumes:
       - dbdata:/var/lib/postgresql/data/pgdata
     networks:
