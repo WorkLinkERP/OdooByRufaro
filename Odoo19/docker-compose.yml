@@ -11,7 +11,7 @@ services:
       - DB_PORT=5432
       - DB_USER=odoo
       - DB_PASSWORD=odoo
-      - DB_NAME=postgres
+      - DB_NAME=odoo19
       - HOST_URL=odoo19.mykargolink.com
     volumes:
       - odoo19-data:/var/lib/odoo
@@ -44,7 +44,7 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=odoo19
       - POSTGRES_PASSWORD=odoo
       - POSTGRES_USER=odoo
       - PGDATA=/var/lib/postgresql/data/pgdata
