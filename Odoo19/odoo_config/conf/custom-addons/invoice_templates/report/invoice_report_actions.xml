@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Override the default invoice report to use Action Basin template directly -->
+    <record id="account.account_invoices" model="ir.actions.report">
+        <field name="name">Invoices</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">invoice_templates.report_invoice_action_basin</field>
+        <field name="report_file">invoice_templates.report_invoice_action_basin</field>
+        <field name="print_report_name">'Invoice - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Action Basin Report Action -->
+    <record id="action_report_invoice_action_basin" model="ir.actions.report">
+        <field name="name">Invoice - Action Basin</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">invoice_templates.report_invoice_action_basin</field>
+        <field name="report_file">invoice_templates.report_invoice_action_basin</field>
+        <field name="print_report_name">'Invoice - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Modern Report Action -->
+    <record id="action_report_invoice_modern" model="ir.actions.report">
+        <field name="name">Invoice - Modern</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">invoice_templates.report_invoice_modern</field>
+        <field name="report_file">invoice_templates.report_invoice_modern</field>
+        <field name="print_report_name">'Invoice - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Dynamic Report Action that uses the selected template -->
+    <record id="action_report_invoice_dynamic" model="ir.actions.report">
+        <field name="name">Invoice (Custom Template)</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">invoice_templates.report_invoice_dynamic</field>
+        <field name="report_file">invoice_templates.report_invoice_dynamic</field>
+        <field name="print_report_name">'Invoice - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+    
+    <!-- Direct Template PDF Report Action (bypasses all complexity) -->
+    <record id="action_report_invoice_template_direct" model="ir.actions.report">
+        <field name="name">Invoice Template PDF</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">invoice_templates.report_invoice_template_direct</field>
+        <field name="report_file">invoice_templates.report_invoice_template_direct</field>
+        <field name="print_report_name">'Invoice-%s-Template' % (object.name)</field>
+    </record>
+
+    <!-- Direct Template that uses the selected template without any complexity -->
+    <template id="report_invoice_template_direct">
+        <t t-foreach="docs" t-as="o">
+            <t t-set="template_name" t-value="o.get_invoice_template_report_name()"/>
+            <t t-if="template_name == 'invoice_templates.report_invoice_action_basin'">
+                <t t-call="invoice_templates.report_invoice_action_basin"/>
+            </t>
+            <t t-elif="template_name == 'invoice_templates.report_invoice_modern'">
+                <t t-call="invoice_templates.report_invoice_modern"/>
+            </t>
+            <t t-else="">
+                <!-- Fallback to Action Basin template -->
+                <t t-call="invoice_templates.report_invoice_action_basin"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- Dynamic Template that chooses the right template based on selection -->
+    <template id="report_invoice_dynamic">
+        <t t-foreach="docs" t-as="o">
+            <t t-set="template_name" t-value="o.get_invoice_template_report_name()"/>
+            <t t-if="template_name == 'invoice_templates.report_invoice_action_basin'">
+                <t t-call="invoice_templates.report_invoice_action_basin"/>
+            </t>
+            <t t-elif="template_name == 'invoice_templates.report_invoice_modern'">
+                <t t-call="invoice_templates.report_invoice_modern"/>
+            </t>
+            <t t-else="">
+                <!-- Fallback to Action Basin template -->
+                <t t-call="invoice_templates.report_invoice_action_basin"/>
+            </t>
+        </t>
+    </template>
+
+</odoo>

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Modern Invoice Template - Self-contained -->
+    <template id="report_invoice_modern">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <!-- Use basic layout without external_layout to avoid default headers/footers -->
+                <div class="article o_report_layout_standard">
+                    <!-- Embedded CSS for PDF generation -->
+                    <style>
+                        /* Reset all default styling */
+                        * {
+                            list-style: none !important;
+                            box-sizing: border-box !important;
+                        }
+
+                        body, html {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            background: white !important;
+                        }
+
+                        /* Remove any default Odoo elements */
+                        .header, .footer, .o_company_1_layout {
+                            display: none !important;
+                        }
+
+                        /* Remove any unwanted content */
+                        ul, ol, li {
+                            list-style: none !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                        }
+
+                        ul:before, ol:before, li:before {
+                            content: none !important;
+                            display: none !important;
+                        }
+
+                        .modern-template {
+                            font-family: 'Helvetica Neue', Arial, sans-serif;
+                            color: #333;
+                            line-height: 1.5;
+                        }
+                        .modern-template .modern-header {
+                            border-bottom: 3px solid #007bff;
+                            padding-bottom: 20px;
+                            margin-bottom: 30px;
+                        }
+                        .modern-template .company-name {
+                            font-size: 28px;
+                            font-weight: 300;
+                            color: #007bff;
+                            margin: 0;
+                        }
+                        .modern-template .company-address {
+                            font-size: 12px;
+                            color: #666;
+                            margin-top: 8px;
+                        }
+                        .modern-template .modern-invoice-title {
+                            font-size: 42px;
+                            font-weight: 100;
+                            color: #007bff;
+                            margin: 0;
+                            letter-spacing: 3px;
+                        }
+                        .modern-template .invoice-number-modern {
+                            font-size: 18px;
+                            color: #666;
+                            margin-top: 10px;
+                            font-weight: 300;
+                        }
+                        .modern-template .section-header {
+                            font-size: 12px;
+                            font-weight: bold;
+                            color: #007bff;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            margin-bottom: 10px;
+                            padding-bottom: 5px;
+                            border-bottom: 1px solid #007bff;
+                        }
+                        .modern-template .modern-bill-to .customer-name {
+                            font-size: 16px;
+                            font-weight: 600;
+                            color: #333;
+                            margin-bottom: 5px;
+                        }
+                        .modern-template .modern-bill-to .customer-details {
+                            font-size: 12px;
+                            color: #666;
+                            line-height: 1.4;
+                        }
+                        .modern-template .modern-invoice-info .info-label {
+                            font-size: 12px;
+                            color: #666;
+                            font-weight: 600;
+                            width: 120px;
+                        }
+                        .modern-template .modern-invoice-info .info-value {
+                            font-size: 12px;
+                            color: #333;
+                        }
+                        .modern-template .modern-lines-table {
+                            margin-top: 30px;
+                            border: none;
+                        }
+                        .modern-template .modern-table-header th {
+                            background-color: #f8f9fa;
+                            color: #007bff;
+                            font-weight: 600;
+                            font-size: 12px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            padding: 15px 10px;
+                            border-bottom: 2px solid #007bff;
+                        }
+                        .modern-template .modern-line-item td {
+                            padding: 12px 10px;
+                            border-bottom: 1px solid #eee;
+                            font-size: 12px;
+                        }
+                        .modern-template .product-name {
+                            font-weight: 600;
+                            color: #333;
+                        }
+                        .modern-template .line-details {
+                            margin-top: 3px;
+                            font-size: 11px;
+                        }
+                        .modern-template .modern-totals {
+                            background-color: #f8f9fa;
+                            padding: 20px;
+                            border-radius: 5px;
+                            margin-top: 20px;
+                        }
+                        .modern-template .modern-totals .total-label {
+                            font-size: 12px;
+                            color: #666;
+                            font-weight: 600;
+                        }
+                        .modern-template .modern-totals .total-value {
+                            font-size: 12px;
+                            color: #333;
+                        }
+                        .modern-template .modern-total-final {
+                            border-top: 2px solid #007bff;
+                            margin-top: 10px;
+                            padding-top: 10px;
+                        }
+                        .modern-template .total-label-final {
+                            font-size: 14px;
+                            font-weight: bold;
+                            color: #007bff;
+                        }
+                        .modern-template .total-value-final {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #007bff;
+                        }
+                        .modern-template .amount-due-highlight {
+                            color: #dc3545;
+                            font-weight: bold;
+                        }
+                        .modern-template .modern-payment-info {
+                            background-color: #f8f9fa;
+                            padding: 20px;
+                            border-radius: 5px;
+                            margin-top: 20px;
+                        }
+                        .modern-template .bank-details,
+                        .modern-template .contact-info {
+                            font-size: 12px;
+                            line-height: 1.5;
+                        }
+                        .modern-template .modern-notes {
+                            margin-top: 20px;
+                        }
+                        .modern-template .notes-content {
+                            font-size: 12px;
+                            color: #666;
+                            line-height: 1.5;
+                            padding: 15px;
+                            background-color: #f8f9fa;
+                            border-radius: 5px;
+                        }
+                        .modern-template .modern-footer {
+                            margin-top: 40px;
+                            padding-top: 20px;
+                            border-top: 1px solid #eee;
+                        }
+                        .modern-template .thank-you-message {
+                            font-size: 14px;
+                            color: #007bff;
+                            font-weight: 300;
+                            margin: 0;
+                        }
+                    </style>
+                    <div class="page modern-template">
+                        
+                        <!-- Header Section with Blue Accent -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="modern-header">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <div class="company-section">
+                                                <img t-if="o.company_id.logo" 
+                                                     t-att-src="image_data_uri(o.company_id.logo)" 
+                                                     style="max-height: 60px; max-width: 180px;" 
+                                                     alt="Company Logo"/>
+                                                <div class="company-details mt-2">
+                                                    <h4 class="company-name" t-field="o.company_id.name"/>
+                                                    <div class="company-address">
+                                                        <div t-if="o.company_id.partner_id.street" t-field="o.company_id.partner_id.street"/>
+                                                        <div>
+                                                            <span t-if="o.company_id.partner_id.city" t-field="o.company_id.partner_id.city"/>
+                                                            <span t-if="o.company_id.partner_id.zip">, <span t-field="o.company_id.partner_id.zip"/></span>
+                                                        </div>
+                                                        <div t-if="o.company_id.partner_id.country_id" t-field="o.company_id.partner_id.country_id.name"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="invoice-title-section">
+                                                <h1 class="modern-invoice-title">
+                                                    <t t-if="o.state == 'draft'">QUOTATION</t>
+                                                    <t t-else="">INVOICE</t>
+                                                </h1>
+                                                <div class="invoice-number-modern">
+                                                    <span t-field="o.name"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer and Invoice Info -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <div class="modern-bill-to">
+                                    <div class="section-header">BILL TO</div>
+                                    <div class="customer-details">
+                                        <div class="customer-name" t-field="o.partner_id.name"/>
+                                        <div t-if="o.partner_id.street" t-field="o.partner_id.street"/>
+                                        <div>
+                                            <span t-if="o.partner_id.city" t-field="o.partner_id.city"/>
+                                            <span t-if="o.partner_id.zip">, <span t-field="o.partner_id.zip"/></span>
+                                        </div>
+                                        <div t-if="o.partner_id.state_id" t-field="o.partner_id.state_id.name"/>
+                                        <div t-if="o.partner_id.country_id" t-field="o.partner_id.country_id.name"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="modern-invoice-info">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="info-label">
+                                                <t t-if="o.state == 'draft'">Quotation Date:</t>
+                                                <t t-else="">Invoice Date:</t>
+                                            </td>
+                                            <td class="info-value"><span t-field="o.invoice_date"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">Due Date:</td>
+                                            <td class="info-value"><span t-field="o.invoice_date_due"/></td>
+                                        </tr>
+                                        <tr t-if="o.invoice_payment_term_id">
+                                            <td class="info-label">Payment Terms:</td>
+                                            <td class="info-value"><span t-field="o.invoice_payment_term_id.name"/></td>
+                                        </tr>
+                                        <tr t-if="o.ref">
+                                            <td class="info-label">Reference:</td>
+                                            <td class="info-value"><span t-field="o.ref"/></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Invoice Lines -->
+                        <div class="row">
+                            <div class="col-12">
+                                <table class="table modern-lines-table">
+                                    <thead>
+                                        <tr class="modern-table-header">
+                                            <th class="text-start">Description</th>
+                                            <th class="text-center">Quantity</th>
+                                            <th class="text-center">Unit Price</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="o.invoice_line_ids.filtered(lambda l: not l.display_type)" t-as="line">
+                                            <tr class="modern-line-item">
+                                                <td class="line-description">
+                                                    <div class="product-name" t-field="line.product_id.name"/>
+                                                    <div class="line-details" t-if="line.name != line.product_id.name">
+                                                        <small class="text-muted" t-field="line.name"/>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span t-field="line.quantity"/>
+                                                    <span t-if="line.product_uom_id" t-field="line.product_uom_id.name"/>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span t-field="line.price_unit" 
+                                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                                </td>
+                                                <td class="text-end">
+                                                    <span t-field="line.price_subtotal" 
+                                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Totals Section -->
+                        <div class="row">
+                            <div class="col-7"></div>
+                            <div class="col-5">
+                                <div class="modern-totals">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="total-label">Subtotal:</td>
+                                            <td class="total-value text-end">
+                                                <span t-field="o.amount_untaxed" 
+                                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                            </td>
+                                        </tr>
+                                        <t t-foreach="o.amount_by_group" t-as="amount_by_group">
+                                            <tr>
+                                                <td class="total-label">
+                                                    <span t-esc="amount_by_group[0]"/>:
+                                                </td>
+                                                <td class="total-value text-end">
+                                                    <span t-esc="amount_by_group[1]" 
+                                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <tr class="modern-total-final">
+                                            <td class="total-label-final">Total:</td>
+                                            <td class="total-value-final text-end">
+                                                <span t-field="o.amount_total" 
+                                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                            </td>
+                                        </tr>
+                                        <tr t-if="o.amount_residual != 0">
+                                            <td class="total-label">Amount Due:</td>
+                                            <td class="total-value text-end amount-due-highlight">
+                                                <span t-field="o.amount_residual" 
+                                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Information -->
+                        <div class="row mt-4" t-if="o.company_id.partner_id.bank_ids">
+                            <div class="col-12">
+                                <div class="modern-payment-info">
+                                    <div class="section-header">PAYMENT INFORMATION</div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <t t-set="bank_account" t-value="o.company_id.partner_id.bank_ids[0]"/>
+                                            <div class="bank-details">
+                                                <div><strong>Bank:</strong> <span t-field="bank_account.bank_id.name"/></div>
+                                                <div><strong>Account Number:</strong> <span t-field="bank_account.acc_number"/></div>
+                                                <div t-if="bank_account.bank_id.bic">
+                                                    <strong>Swift/BIC:</strong> <span t-field="bank_account.bank_id.bic"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="contact-info">
+                                                <div t-if="o.company_id.phone">
+                                                    <strong>Phone:</strong> <span t-field="o.company_id.phone"/>
+                                                </div>
+                                                <div t-if="o.company_id.email">
+                                                    <strong>Email:</strong> <span t-field="o.company_id.email"/>
+                                                </div>
+                                                <div t-if="o.company_id.website">
+                                                    <strong>Website:</strong> <span t-field="o.company_id.website"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="row mt-4" t-if="o.narration">
+                            <div class="col-12">
+                                <div class="modern-notes">
+                                    <div class="section-header">NOTES</div>
+                                    <div class="notes-content" t-field="o.narration"/>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <div class="modern-footer text-center">
+                                    <p class="thank-you-message">Thank you for your business!</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+    
+</odoo>

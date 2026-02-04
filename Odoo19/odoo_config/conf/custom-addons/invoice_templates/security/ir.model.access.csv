@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_invoice_template_user,invoice.template.user,model_invoice_template,base.group_user,1,0,0,0
+access_invoice_template_manager,invoice.template.manager,model_invoice_template,account.group_account_manager,1,1,1,1
+access_template_preview_wizard_user,template.preview.wizard.user,model_template_preview_wizard,base.group_user,1,1,1,1
+access_invoice_template_config_settings_manager,invoice.template.config.settings.manager,model_invoice_template_config_settings,account.group_account_manager,1,1,1,1

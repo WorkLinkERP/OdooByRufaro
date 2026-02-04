@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Template Preview Wizard Form -->
+    <record id="view_template_preview_wizard_form" model="ir.ui.view">
+        <field name="name">template.preview.wizard.form</field>
+        <field name="model">template.preview.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Preview Template">
+                <group>
+                    <group>
+                        <field name="template_id" options="{'no_create': True}"/>
+                    </group>
+                    <group>
+                        <field name="invoice_id" options="{'no_create': True}"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_preview_template" 
+                            string="Preview Template" 
+                            type="object" 
+                            class="btn-primary"/>
+                    <button name="action_set_as_default" 
+                            string="Set as Default" 
+                            type="object" 
+                            class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Template Preview Wizard Action -->
+    <record id="action_template_preview_wizard" model="ir.actions.act_window">
+        <field name="name">Preview Template</field>
+        <field name="res_model">template.preview.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    
+</odoo>

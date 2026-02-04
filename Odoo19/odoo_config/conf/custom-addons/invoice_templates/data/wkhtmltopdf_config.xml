@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- System parameter to enable local file access for wkhtmltopdf -->
+    <record id="wkhtmltopdf_enable_local_file_access" model="ir.config_parameter">
+        <field name="key">report.wkhtmltopdf.options</field>
+        <field name="value">--enable-local-file-access</field>
+    </record>
+    
+    <!-- Alternative system parameter for older Odoo versions -->
+    <record id="wkhtmltopdf_webkit_path" model="ir.config_parameter">
+        <field name="key">webkit_path</field>
+        <field name="value">/usr/local/bin/wkhtmltopdf --enable-local-file-access</field>
+    </record>
+    
+</odoo>

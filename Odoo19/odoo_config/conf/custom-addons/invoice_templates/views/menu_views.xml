@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Invoice Templates Menu -->
+    <menuitem id="menu_invoice_templates_root"
+              name="Invoice Templates"
+              parent="account.menu_finance_configuration"
+              sequence="50"/>
+    
+    <menuitem id="menu_invoice_templates"
+              name="Templates"
+              parent="menu_invoice_templates_root"
+              action="action_invoice_template"
+              sequence="10"/>
+
+    <menuitem id="menu_template_preview"
+              name="Preview Templates"
+              parent="menu_invoice_templates_root"
+              action="invoice_templates.action_template_preview_wizard"
+              sequence="20"/>
+
+    <!-- Invoice Template Settings Action -->
+    <record id="action_invoice_template_settings" model="ir.actions.act_window">
+        <field name="name">Invoice Template Settings</field>
+        <field name="res_model">invoice.template.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_invoice_template_config_settings"/>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_template_settings"
+              name="Settings"
+              parent="menu_invoice_templates_root"
+              action="action_invoice_template_settings"
+              sequence="30"/>
+
+</odoo>

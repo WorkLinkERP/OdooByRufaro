@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <!-- Action Basin Template -->
+        <record id="template_action_basin" model="invoice.template">
+            <field name="name">Action Basin</field>
+            <field name="code">action_basin</field>
+            <field name="description">Professional template inspired by Action Basin design with clean layout and modern styling</field>
+            <field name="sequence">10</field>
+            <field name="report_name">invoice_templates.report_invoice_action_basin</field>
+            <field name="is_default">True</field>
+        </record>
+        
+        <!-- Modern Template -->
+        <record id="template_modern" model="invoice.template">
+            <field name="name">Modern</field>
+            <field name="code">modern</field>
+            <field name="description">Clean and modern invoice template with minimalist design</field>
+            <field name="sequence">20</field>
+            <field name="report_name">invoice_templates.report_invoice_modern</field>
+            <field name="is_default">False</field>
+        </record>
+        
+    </data>
+</odoo>
