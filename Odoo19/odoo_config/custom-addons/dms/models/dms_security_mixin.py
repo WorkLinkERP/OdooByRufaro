@@ -104,7 +104,12 @@ class DmsSecurityMixin(models.AbstractModel):
     @api.model
     def _get_domain_by_inheritance(self, operation):
         """Get domain for inherited accessible records."""
+        _logger.info(
+            "DMS [%s] _get_domain_by_inheritance START: op=%s uid=%s su=%s",
+            self._name, operation, self.env.uid, self.env.su,
+        )
         if self.env.su:
+            _logger.info("DMS [%s] _get_domain_by_inheritance: returning TRUE (superuser)", self._name)
             return Domain.TRUE
         inherited_access_field = "storage_id_inherit_access_from_parent_record"
         if self._name != "dms.directory":
@@ -113,6 +118,10 @@ class DmsSecurityMixin(models.AbstractModel):
             ("storage_id_save_type", "=", "attachment"),
             (inherited_access_field, "=", True),
         ])
+        _logger.info(
+            "DMS [%s] _get_domain_by_inheritance: inherited_access_domain=%r",
+            self._name, inherited_access_domain,
+        )
         domains = []
         # Get all used related records
         related_groups = self.sudo()._read_group(
@@ -120,8 +129,16 @@ class DmsSecurityMixin(models.AbstractModel):
             groupby=["res_model"],
             aggregates=["res_id:array_agg"],
         )
+        _logger.info(
+            "DMS [%s] _get_domain_by_inheritance: found %d related_groups",
+            self._name, len(related_groups),
+        )
         for res_model, res_ids_agg in related_groups:
             group = {"res_model": res_model, "res_id": res_ids_agg}
+            _logger.info(
+                "DMS [%s] _get_domain_by_inheritance: processing group res_model=%s res_ids_count=%d",
+                self._name, res_model, len(res_ids_agg) if res_ids_agg else 0,
+            )
             try:
                 model = self.env[group["res_model"]]
             except KeyError:
@@ -153,9 +170,19 @@ class DmsSecurityMixin(models.AbstractModel):
             domains.append(
                 Domain([("res_model", "=", model._name), ("res_id", "in", related_ok.ids)])
             )
+        _logger.info(
+            "DMS [%s] _get_domain_by_inheritance: collected %d domains",
+            self._name, len(domains),
+        )
         if not domains:
+            _logger.info("DMS [%s] _get_domain_by_inheritance: returning FALSE (no domains)", self._name)
             return Domain.FALSE
-        return inherited_access_domain & Domain.OR(domains)
+        result = inherited_access_domain & Domain.OR(domains)
+        _logger.info(
+            "DMS [%s] _get_domain_by_inheritance: returning combined domain=%r",
+            self._name, result,
+        )
+        return result
 
     @api.model
     def _get_access_groups_query(self, operation):
@@ -180,7 +207,7 @@ class DmsSecurityMixin(models.AbstractModel):
                 users.uid = %s {operation_check}
             )"""
         sql = SQL(select, uid)
-        _logger.debug(
+        _logger.info(
             "DMS [%s] _get_access_groups_query op=%s uid=%s sql.code=%r sql.params=%r",
             self._name, operation, uid, sql.code, sql.params,
         )
@@ -188,14 +215,18 @@ class DmsSecurityMixin(models.AbstractModel):
         try:
             self.env.cr.execute(SQL("SELECT array_agg(aid) FROM %s", sql))
             ids = self.env.cr.fetchone()[0] or []
-            _logger.debug("DMS [%s] accessible directory ids for uid=%s op=%s: %s", self._name, uid, operation, ids)
+            _logger.info("DMS [%s] accessible directory ids for uid=%s op=%s: count=%d ids=%s", self._name, uid, operation, len(ids) if ids else 0, ids)
         except Exception as e:
-            _logger.debug("DMS [%s] error running access groups query: %s", self._name, e)
+            _logger.warning("DMS [%s] error running access groups query: %s", self._name, e)
         return sql
 
     @api.model
     def _get_domain_by_access_groups(self, operation):
         """Get domain for records accessible applying DMS access groups."""
+        _logger.info(
+            "DMS [%s] _get_domain_by_access_groups START: op=%s uid=%s directory_field=%s",
+            self._name, operation, self.env.uid, self._directory_field,
+        )
         directory_field = self._directory_field
         sql_query = self._get_access_groups_query(operation)
         custom = Domain.custom(
@@ -205,7 +236,7 @@ class DmsSecurityMixin(models.AbstractModel):
                 _s,
             )
         )
-        return Domain([
+        result = Domain([
             (
                 f"{directory_field}.storage_id_inherit_access_from_parent_record",
                 "=",
@@ -213,42 +244,51 @@ class DmsSecurityMixin(models.AbstractModel):
             ),
             custom,
         ])
+        _logger.info(
+            "DMS [%s] _get_domain_by_access_groups: returning domain=%r",
+            self._name, result,
+        )
+        return result
 
     @api.model
     def _get_permission_domain(self, operator, value, operation):
         """Abstract logic for searching computed permission fields."""
         _self = self
-        _logger.debug(
-            "DMS [%s] _get_permission_domain called: op=%s val=%r env.uid=%s env.su=%s",
-            self._name, operation, value, self.env.uid, self.env.su,
+        _logger.info(
+            "DMS [%s] _get_permission_domain START: op=%s operator=%s val=%r env.uid=%s env.su=%s",
+            self._name, operation, operator, value, self.env.uid, self.env.su,
         )
         # HACK ir.rule domain is always computed with sudo, so if this check is
         # true, we can assume safely that you're checking permissions
         if self.env.su and value == self.env.uid:
             _self = self.sudo(False)
             value = bool(value)
+            _logger.info(
+                "DMS [%s] _get_permission_domain: adjusted for sudo check, value now=%r",
+                self._name, value,
+            )
         # Tricky one, to know if you want to search
         # positive or negative access
         positive = (operator not in NEGATIVE_TERM_OPERATORS) == bool(value)
-        _logger.debug(
+        _logger.info(
             "DMS [%s] _get_permission_domain: positive=%s _self.env.su=%s _self.env.uid=%s",
             self._name, positive, _self.env.su, _self.env.uid,
         )
         if _self.env.su:
             # You're SUPERUSER_ID
-            _logger.debug("DMS [%s] returning %s (superuser)", self._name, "TRUE" if positive else "FALSE")
+            _logger.info("DMS [%s] returning %s (superuser)", self._name, "TRUE" if positive else "FALSE")
             return Domain.TRUE if positive else Domain.FALSE
 
         access_groups_domain = _self._get_domain_by_access_groups(operation)
         inheritance_domain = _self._get_domain_by_inheritance(operation)
-        _logger.debug(
+        _logger.info(
             "DMS [%s] access_groups_domain=%r inheritance_domain=%r",
             self._name, access_groups_domain, inheritance_domain,
         )
         result = access_groups_domain | inheritance_domain
         if not positive:
             result = ~result
-        _logger.debug("DMS [%s] _get_permission_domain result=%r", self._name, result)
+        _logger.info("DMS [%s] _get_permission_domain FINAL result=%r", self._name, result)
         return result
 
     @api.model

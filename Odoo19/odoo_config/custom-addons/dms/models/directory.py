@@ -209,6 +209,10 @@ class DmsDirectory(models.Model):
     @api.model
     def _get_domain_by_access_groups(self, operation):
         """Special rules for directories."""
+        _logger.info(
+            "DMS DIRECTORY _get_domain_by_access_groups START: op=%s uid=%s",
+            operation, self.env.uid,
+        )
         sql_query = self._get_access_groups_query(operation)
         self_access_custom = Domain.custom(
             to_sql=lambda model, alias, query, _s=sql_query: SQL(
@@ -221,18 +225,34 @@ class DmsDirectory(models.Model):
             ("storage_id_inherit_access_from_parent_record", "=", False),
             self_access_custom,
         ])
+        _logger.info(
+            "DMS DIRECTORY _get_domain_by_access_groups: self_filter=%r",
+            self_filter,
+        )
         # Upstream only filters by parent directory
         parent_filter = super()._get_domain_by_access_groups(operation)
+        _logger.info(
+            "DMS DIRECTORY _get_domain_by_access_groups: parent_filter=%r",
+            parent_filter,
+        )
         if operation == "create":
-            # When creating, I need create access in parent directory, or
-            # self-create permission if it's a root directory
-            return (
-                Domain([("is_root_directory", "=", False)]) & parent_filter
-            ) | (
-                Domain([("is_root_directory", "=", True)]) & self_filter
+            # When checking permission_create on directories for selection as parent_id,
+            # we want to know which directories we can create children IN.
+            # This means we need to check the directory's own create permission,
+            # not its parent's permission.
+            # Both root and non-root directories should use self_filter.
+            result = self_filter
+            _logger.info(
+                "DMS DIRECTORY _get_domain_by_access_groups: CREATE operation, returning self_filter=%r",
+                result,
             )
+            return result
         else:
             # In other operations, I only need self access
+            _logger.info(
+                "DMS DIRECTORY _get_domain_by_access_groups: %s operation, returning self_filter=%r",
+                operation, self_filter,
+            )
             return self_filter
 
     def _compute_access_url(self):
@@ -380,6 +400,40 @@ class DmsDirectory(models.Model):
         return None, None
 
     # Search
+    @api.model
+    def search(self, domain, offset=0, limit=None, order=None):
+        """Override search to log when searching with permission_create domain."""
+        has_permission_create = any(
+            isinstance(item, (list, tuple)) and len(item) >= 1 and item[0] == "permission_create"
+            for item in domain
+        )
+        if has_permission_create:
+            _logger.info(
+                "DMS DIRECTORY search with permission_create: domain=%r offset=%d limit=%r order=%r uid=%s context=%r",
+                domain, offset, limit, order, self.env.uid, self.env.context,
+            )
+        result = super().search(domain, offset=offset, limit=limit, order=order)
+        if has_permission_create:
+            _logger.info(
+                "DMS DIRECTORY search with permission_create RESULT: found %d directories, ids=%r",
+                len(result), result.ids,
+            )
+        return result
+
+    @api.model
+    def name_search(self, name="", args=None, operator="ilike", limit=100):
+        """Override name_search to add logging for debugging directory selection issues."""
+        _logger.info(
+            "DMS DIRECTORY name_search START: name=%r args=%r operator=%s limit=%d uid=%s context=%r",
+            name, args, operator, limit, self.env.uid, self.env.context,
+        )
+        result = super().name_search(name=name, args=args, operator=operator, limit=limit)
+        _logger.info(
+            "DMS DIRECTORY name_search RESULT: found %d directories: %r",
+            len(result), result,
+        )
+        return result
+
     @api.model
     def _search_starred(self, operator, operand):
         if operator == "=" and operand:
