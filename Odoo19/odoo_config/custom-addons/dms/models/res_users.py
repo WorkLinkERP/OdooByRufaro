@@ -22,4 +22,21 @@ class ResUsers(models.Model):
                 user.dms_role = 'none'
 
     def _inverse_dms_role(self):
-        pass
+        viewer = self.env.ref('dms.group_dms_viewer')
+        editor = self.env.ref('dms.group_dms_user')
+        admin = self.env.ref('dms.group_dms_manager')
+        all_dms_groups = viewer | editor | admin
+        
+        for user in self:
+            current_groups = user.groups_id
+            new_groups = current_groups - all_dms_groups
+            
+            if user.dms_role == 'viewer':
+                new_groups |= viewer
+            elif user.dms_role == 'editor':
+                new_groups |= editor
+            elif user.dms_role == 'admin':
+                new_groups |= admin
+            
+            if new_groups != current_groups:
+                user.groups_id = new_groups
