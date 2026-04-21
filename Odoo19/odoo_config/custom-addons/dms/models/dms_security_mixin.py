@@ -245,14 +245,13 @@ class DmsSecurityMixin(models.AbstractModel):
         inheritance_domain = _self._get_domain_by_inheritance(operation)
         _logger.debug(
             "DMS [%s] access_groups_domain=%r inheritance_domain=%r",
-            self._name, list(access_groups_domain), list(inheritance_domain),
+            self._name, access_groups_domain, inheritance_domain,
         )
         result = access_groups_domain | inheritance_domain
         if not positive:
             result = ~result
-        final = list(result)
-        _logger.debug("DMS [%s] _get_permission_domain result=%r", self._name, final)
-        return final
+        _logger.debug("DMS [%s] _get_permission_domain result=%r", self._name, result)
+        return result
 
     @api.model
     def _search_permission_create(self, operator, value):
