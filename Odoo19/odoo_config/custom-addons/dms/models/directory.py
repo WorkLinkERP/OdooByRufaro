@@ -15,7 +15,7 @@ from typing import Literal  # noqa # pylint: disable=unused-import
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.orm.domains import Domain
-from odoo.osv.expression import AND, OR
+from odoo.osv.expression import AND
 from odoo.tools import consteq, human_size, SQL
 
 from ..tools.file import check_name, unique_name
@@ -221,25 +221,23 @@ class DmsDirectory(models.Model):
                 _s,
             )
         )
-        self_filter = [
+        self_filter = Domain([
             ("storage_id_inherit_access_from_parent_record", "=", False),
             self_access_custom,
-        ]
+        ])
         # Upstream only filters by parent directory
-        result = super()._get_domain_by_access_groups(operation)
+        parent_filter = super()._get_domain_by_access_groups(operation)
         if operation == "create":
             # When creating, I need create access in parent directory, or
             # self-create permission if it's a root directory
-            result = OR(
-                [
-                    [("is_root_directory", "=", False)] + result,
-                    [("is_root_directory", "=", True)] + self_filter,
-                ]
+            return (
+                Domain([("is_root_directory", "=", False)]) & parent_filter
+            ) | (
+                Domain([("is_root_directory", "=", True)]) & self_filter
             )
         else:
             # In other operations, I only need self access
-            result = self_filter
-        return result
+            return self_filter
 
     def _compute_access_url(self):
         res = super()._compute_access_url()

@@ -12,7 +12,6 @@ from odoo.orm.domains import Domain
 from odoo.osv.expression import (
     FALSE_DOMAIN,
     NEGATIVE_TERM_OPERATORS,
-    OR,
     TRUE_DOMAIN,
 )
 from odoo.tools import SQL
@@ -107,18 +106,18 @@ class DmsSecurityMixin(models.AbstractModel):
     def _get_domain_by_inheritance(self, operation):
         """Get domain for inherited accessible records."""
         if self.env.su:
-            return []
+            return Domain.TRUE
         inherited_access_field = "storage_id_inherit_access_from_parent_record"
         if self._name != "dms.directory":
             inherited_access_field = f"{self._directory_field}.{inherited_access_field}"
-        inherited_access_domain = [
+        inherited_access_domain = Domain([
             ("storage_id_save_type", "=", "attachment"),
             (inherited_access_field, "=", True),
-        ]
+        ])
         domains = []
         # Get all used related records
         related_groups = self.sudo().read_group(
-            domain=inherited_access_domain + [("res_model", "!=", False)],
+            domain=list(inherited_access_domain) + [("res_model", "!=", False)],
             fields=["res_id:array_agg"],
             groupby=["res_model"],
         )
@@ -131,10 +130,10 @@ class DmsSecurityMixin(models.AbstractModel):
                 # Otherwise, you probably have garbage DMS data.
                 # These records will be accessible by DB users only.
                 domains.append(
-                    [
+                    Domain([
                         ("res_model", "=", group["res_model"]),
                         (True, "=", self.env.user.has_group("base.group_user")),
-                    ]
+                    ])
                 )
                 continue
             # Check model access only once per batch
@@ -142,7 +141,7 @@ class DmsSecurityMixin(models.AbstractModel):
                 model.check_access(operation)
             except AccessError:
                 continue
-            domains.append([("res_model", "=", model._name), ("res_id", "=", False)])
+            domains.append(Domain([("res_model", "=", model._name), ("res_id", "=", False)]))
             # Check record access in batch too
             res_ids = [i for i in group["res_id"] if i]  # Hack to remove None res_id
             # Apply exists to skip records that do not exist. (e.g. a res.partner
@@ -152,10 +151,11 @@ class DmsSecurityMixin(models.AbstractModel):
             if not related_ok:
                 continue
             domains.append(
-                [("res_model", "=", model._name), ("res_id", "in", related_ok.ids)]
+                Domain([("res_model", "=", model._name), ("res_id", "in", related_ok.ids)])
             )
-        result = inherited_access_domain + OR(domains)
-        return result
+        if not domains:
+            return Domain.FALSE
+        return inherited_access_domain & Domain.OR(domains)
 
     @api.model
     def _get_access_groups_query(self, operation):
@@ -193,15 +193,14 @@ class DmsSecurityMixin(models.AbstractModel):
                 _s,
             )
         )
-        result = [
+        return Domain([
             (
                 f"{directory_field}.storage_id_inherit_access_from_parent_record",
                 "=",
                 False,
             ),
             custom,
-        ]
-        return result
+        ])
 
     @api.model
     def _get_permission_domain(self, operator, value, operation):
@@ -219,15 +218,13 @@ class DmsSecurityMixin(models.AbstractModel):
             # You're SUPERUSER_ID
             return TRUE_DOMAIN if positive else FALSE_DOMAIN
 
-        result = OR(
-            [
-                _self._get_domain_by_access_groups(operation),
-                _self._get_domain_by_inheritance(operation),
-            ]
+        result = (
+            _self._get_domain_by_access_groups(operation)
+            | _self._get_domain_by_inheritance(operation)
         )
         if not positive:
-            result.insert(0, "!")
-        return result
+            result = ~result
+        return list(result)
 
     @api.model
     def _search_permission_create(self, operator, value):
