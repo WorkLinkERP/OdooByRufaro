@@ -8,6 +8,7 @@ from logging import getLogger
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
+from odoo.orm.domains import Domain
 from odoo.osv.expression import (
     FALSE_DOMAIN,
     NEGATIVE_TERM_OPERATORS,
@@ -165,6 +166,7 @@ class DmsSecurityMixin(models.AbstractModel):
             "unlink": "AND dag.perm_inclusive_unlink",
             "write": "AND dag.perm_inclusive_write",
         }[operation]
+        uid = self.env.uid
         select = f"""(
             SELECT
                 dir_group_rel.aid
@@ -177,26 +179,27 @@ class DmsSecurityMixin(models.AbstractModel):
             WHERE
                 users.uid = %s {operation_check}
             )"""
-        sql = SQL(
-            select,
-            self.env.uid,
-        )
-        return sql
+        return SQL(select, uid)
 
     @api.model
     def _get_domain_by_access_groups(self, operation):
         """Get domain for records accessible applying DMS access groups."""
+        directory_field = self._directory_field
+        sql_query = self._get_access_groups_query(operation)
+        custom = Domain.custom(
+            to_sql=lambda model, alias, query, _f=directory_field, _s=sql_query: SQL(
+                "%s IN %s",
+                SQL.identifier(alias, _f if "." not in _f else _f.split(".")[0]),
+                _s,
+            )
+        )
         result = [
             (
-                f"{self._directory_field}.storage_id_inherit_access_from_parent_record",
+                f"{directory_field}.storage_id_inherit_access_from_parent_record",
                 "=",
                 False,
             ),
-            (
-                self._directory_field,
-                "in",
-                self._get_access_groups_query(operation),
-            ),
+            custom,
         ]
         return result
 

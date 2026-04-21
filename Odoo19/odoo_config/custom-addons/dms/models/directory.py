@@ -14,8 +14,9 @@ from typing import Literal  # noqa # pylint: disable=unused-import
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import UserError, ValidationError
+from odoo.orm.domains import Domain
 from odoo.osv.expression import AND, OR
-from odoo.tools import consteq, human_size
+from odoo.tools import consteq, human_size, SQL
 
 from ..tools.file import check_name, unique_name
 
@@ -212,9 +213,17 @@ class DmsDirectory(models.Model):
     @api.model
     def _get_domain_by_access_groups(self, operation):
         """Special rules for directories."""
+        sql_query = self._get_access_groups_query(operation)
+        self_access_custom = Domain.custom(
+            to_sql=lambda model, alias, query, _s=sql_query: SQL(
+                "%s IN %s",
+                SQL.identifier(alias, "id"),
+                _s,
+            )
+        )
         self_filter = [
             ("storage_id_inherit_access_from_parent_record", "=", False),
-            ("id", "in", self._get_access_groups_query(operation)),
+            self_access_custom,
         ]
         # Upstream only filters by parent directory
         result = super()._get_domain_by_access_groups(operation)
