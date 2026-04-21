@@ -5,6 +5,7 @@
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 
 import base64
+import binascii
 import hashlib
 import json
 import logging
@@ -439,8 +440,12 @@ class DMSFile(models.Model):
     @api.depends("content")
     def _compute_mimetype(self):
         for record in self:
-            binary = base64.b64decode(record.content or "")
-            record.mimetype = guess_mimetype(binary)
+            try:
+                binary = base64.b64decode(record.content or "")
+                record.mimetype = guess_mimetype(binary)
+            except (binascii.Error, ValueError):
+                # Handle invalid base64 content gracefully
+                record.mimetype = False
 
     @api.depends("size")
     def _compute_human_size(self):
