@@ -119,8 +119,8 @@ class DmsSecurityMixin(models.AbstractModel):
             (inherited_access_field, "=", True),
         ])
         _logger.info(
-            "DMS [%s] _get_domain_by_inheritance: inherited_access_domain=%r",
-            self._name, inherited_access_domain,
+            "DMS [%s] _get_domain_by_inheritance: inherited_access_domain created",
+            self._name,
         )
         domains = []
         # Get all used related records
@@ -179,8 +179,8 @@ class DmsSecurityMixin(models.AbstractModel):
             return Domain.FALSE
         result = inherited_access_domain & Domain.OR(domains)
         _logger.info(
-            "DMS [%s] _get_domain_by_inheritance: returning combined domain=%r",
-            self._name, result,
+            "DMS [%s] _get_domain_by_inheritance: returning combined domain",
+            self._name,
         )
         return result
 
@@ -245,8 +245,8 @@ class DmsSecurityMixin(models.AbstractModel):
             custom,
         ])
         _logger.info(
-            "DMS [%s] _get_domain_by_access_groups: returning domain=%r",
-            self._name, result,
+            "DMS [%s] _get_domain_by_access_groups: returning domain",
+            self._name,
         )
         return result
 
@@ -282,13 +282,13 @@ class DmsSecurityMixin(models.AbstractModel):
         access_groups_domain = _self._get_domain_by_access_groups(operation)
         inheritance_domain = _self._get_domain_by_inheritance(operation)
         _logger.info(
-            "DMS [%s] access_groups_domain=%r inheritance_domain=%r",
-            self._name, access_groups_domain, inheritance_domain,
+            "DMS [%s] access_groups_domain and inheritance_domain created",
+            self._name,
         )
         result = access_groups_domain | inheritance_domain
         if not positive:
             result = ~result
-        _logger.info("DMS [%s] _get_permission_domain FINAL result=%r", self._name, result)
+        _logger.info("DMS [%s] _get_permission_domain FINAL result computed", self._name)
         return result
 
     @api.model

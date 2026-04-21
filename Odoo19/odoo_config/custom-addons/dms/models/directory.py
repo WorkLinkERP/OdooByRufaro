@@ -226,14 +226,12 @@ class DmsDirectory(models.Model):
             self_access_custom,
         ])
         _logger.info(
-            "DMS DIRECTORY _get_domain_by_access_groups: self_filter=%r",
-            self_filter,
+            "DMS DIRECTORY _get_domain_by_access_groups: self_filter created"
         )
         # Upstream only filters by parent directory
         parent_filter = super()._get_domain_by_access_groups(operation)
         _logger.info(
-            "DMS DIRECTORY _get_domain_by_access_groups: parent_filter=%r",
-            parent_filter,
+            "DMS DIRECTORY _get_domain_by_access_groups: parent_filter created"
         )
         if operation == "create":
             # When checking permission_create on directories for selection as parent_id,
@@ -243,15 +241,14 @@ class DmsDirectory(models.Model):
             # Both root and non-root directories should use self_filter.
             result = self_filter
             _logger.info(
-                "DMS DIRECTORY _get_domain_by_access_groups: CREATE operation, returning self_filter=%r",
-                result,
+                "DMS DIRECTORY _get_domain_by_access_groups: CREATE operation, returning self_filter"
             )
             return result
         else:
             # In other operations, I only need self access
             _logger.info(
-                "DMS DIRECTORY _get_domain_by_access_groups: %s operation, returning self_filter=%r",
-                operation, self_filter,
+                "DMS DIRECTORY _get_domain_by_access_groups: %s operation, returning self_filter",
+                operation,
             )
             return self_filter
 
