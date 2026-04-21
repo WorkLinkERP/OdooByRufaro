@@ -179,7 +179,19 @@ class DmsSecurityMixin(models.AbstractModel):
             WHERE
                 users.uid = %s {operation_check}
             )"""
-        return SQL(select, uid)
+        sql = SQL(select, uid)
+        _logger.debug(
+            "DMS [%s] _get_access_groups_query op=%s uid=%s sql.code=%r sql.params=%r",
+            self._name, operation, uid, sql.code, sql.params,
+        )
+        # Also run it immediately to see how many directories the user can access
+        try:
+            self.env.cr.execute(SQL("SELECT array_agg(aid) FROM %s", sql))
+            ids = self.env.cr.fetchone()[0] or []
+            _logger.debug("DMS [%s] accessible directory ids for uid=%s op=%s: %s", self._name, uid, operation, ids)
+        except Exception as e:
+            _logger.debug("DMS [%s] error running access groups query: %s", self._name, e)
+        return sql
 
     @api.model
     def _get_domain_by_access_groups(self, operation):
@@ -206,6 +218,10 @@ class DmsSecurityMixin(models.AbstractModel):
     def _get_permission_domain(self, operator, value, operation):
         """Abstract logic for searching computed permission fields."""
         _self = self
+        _logger.debug(
+            "DMS [%s] _get_permission_domain called: op=%s val=%r env.uid=%s env.su=%s",
+            self._name, operation, value, self.env.uid, self.env.su,
+        )
         # HACK ir.rule domain is always computed with sudo, so if this check is
         # true, we can assume safely that you're checking permissions
         if self.env.su and value == self.env.uid:
@@ -214,17 +230,27 @@ class DmsSecurityMixin(models.AbstractModel):
         # Tricky one, to know if you want to search
         # positive or negative access
         positive = (operator not in NEGATIVE_TERM_OPERATORS) == bool(value)
+        _logger.debug(
+            "DMS [%s] _get_permission_domain: positive=%s _self.env.su=%s _self.env.uid=%s",
+            self._name, positive, _self.env.su, _self.env.uid,
+        )
         if _self.env.su:
             # You're SUPERUSER_ID
+            _logger.debug("DMS [%s] returning %s (superuser)", self._name, "TRUE" if positive else "FALSE")
             return TRUE_DOMAIN if positive else FALSE_DOMAIN
 
-        result = (
-            _self._get_domain_by_access_groups(operation)
-            | _self._get_domain_by_inheritance(operation)
+        access_groups_domain = _self._get_domain_by_access_groups(operation)
+        inheritance_domain = _self._get_domain_by_inheritance(operation)
+        _logger.debug(
+            "DMS [%s] access_groups_domain=%r inheritance_domain=%r",
+            self._name, list(access_groups_domain), list(inheritance_domain),
         )
+        result = access_groups_domain | inheritance_domain
         if not positive:
             result = ~result
-        return list(result)
+        final = list(result)
+        _logger.debug("DMS [%s] _get_permission_domain result=%r", self._name, final)
+        return final
 
     @api.model
     def _search_permission_create(self, operator, value):
