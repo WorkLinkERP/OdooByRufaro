@@ -27,10 +27,11 @@ class ResUsers(models.Model):
         admin = self.env.ref('dms.group_dms_manager')
         groups = viewer | editor | admin
         for user in self:
-            user.groups_id -= groups
+            group_to_add = self.env['res.groups']
             if user.dms_role == 'viewer':
-                user.groups_id += viewer
+                group_to_add = viewer
             elif user.dms_role == 'editor':
-                user.groups_id += editor
+                group_to_add = editor
             elif user.dms_role == 'admin':
-                user.groups_id += admin
+                group_to_add = admin
+            super(ResUsers, user).write({'groups_id': [(5, 0, 0)] + ([(4, group_to_add.id)] if group_to_add else [])})
