@@ -25,18 +25,24 @@ class ResUsers(models.Model):
         viewer = self.env.ref('dms.group_dms_viewer')
         editor = self.env.ref('dms.group_dms_user')
         admin = self.env.ref('dms.group_dms_manager')
-        all_dms_groups = [viewer, editor, admin]
+        all_group_ids = [viewer.id, editor.id, admin.id]
 
         role_map = {
-            'viewer': viewer,
-            'editor': editor,
-            'admin': admin,
+            'viewer': viewer.id,
+            'editor': editor.id,
+            'admin': admin.id,
         }
 
         for user in self:
-            target_group = role_map.get(user.dms_role)
-            for group in all_dms_groups:
-                if group == target_group:
-                    group.sudo().write({'users': [(4, user.id)]})
-                else:
-                    group.sudo().write({'users': [(3, user.id)]})
+            target_group_id = role_map.get(user.dms_role)
+            self.env.cr.execute(
+                "DELETE FROM res_groups_users_rel WHERE uid = %s AND gid = ANY(%s)",
+                (user.id, all_group_ids)
+            )
+            if target_group_id:
+                self.env.cr.execute(
+                    "INSERT INTO res_groups_users_rel (uid, gid) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (user.id, target_group_id)
+                )
+        self.env['res.users'].invalidate_model(['groups_id'])
+        self.env['res.groups'].invalidate_model(['users'])
