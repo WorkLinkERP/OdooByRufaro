@@ -9,12 +9,13 @@ from logging import getLogger
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
 from odoo.orm.domains import Domain
-from odoo.osv.expression import (
-    FALSE_DOMAIN,
-    NEGATIVE_TERM_OPERATORS,
-    TRUE_DOMAIN,
-)
 from odoo.tools import SQL
+
+NEGATIVE_TERM_OPERATORS = frozenset([
+    "!=", "not in", "not like", "not ilike", "not =like", "not =ilike",
+])
+FALSE_DOMAIN = [(0, "=", 1)]
+TRUE_DOMAIN = []
 
 _logger = getLogger(__name__)
 
@@ -116,12 +117,13 @@ class DmsSecurityMixin(models.AbstractModel):
         ])
         domains = []
         # Get all used related records
-        related_groups = self.sudo().read_group(
-            domain=list(inherited_access_domain) + [("res_model", "!=", False)],
-            fields=["res_id:array_agg"],
+        related_groups = self.sudo()._read_group(
+            domain=inherited_access_domain & Domain([("res_model", "!=", False)]),
             groupby=["res_model"],
+            aggregates=["res_id:array_agg"],
         )
-        for group in related_groups:
+        for res_model, res_ids_agg in related_groups:
+            group = {"res_model": res_model, "res_id": res_ids_agg}
             try:
                 model = self.env[group["res_model"]]
             except KeyError:
