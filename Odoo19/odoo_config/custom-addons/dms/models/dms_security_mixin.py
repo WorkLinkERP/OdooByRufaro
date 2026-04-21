@@ -14,8 +14,6 @@ from odoo.tools import SQL
 NEGATIVE_TERM_OPERATORS = frozenset([
     "!=", "not in", "not like", "not ilike", "not =like", "not =ilike",
 ])
-FALSE_DOMAIN = [(0, "=", 1)]
-TRUE_DOMAIN = []
 
 _logger = getLogger(__name__)
 
@@ -239,7 +237,7 @@ class DmsSecurityMixin(models.AbstractModel):
         if _self.env.su:
             # You're SUPERUSER_ID
             _logger.debug("DMS [%s] returning %s (superuser)", self._name, "TRUE" if positive else "FALSE")
-            return TRUE_DOMAIN if positive else FALSE_DOMAIN
+            return Domain.TRUE if positive else Domain.FALSE
 
         access_groups_domain = _self._get_domain_by_access_groups(operation)
         inheritance_domain = _self._get_domain_by_inheritance(operation)
