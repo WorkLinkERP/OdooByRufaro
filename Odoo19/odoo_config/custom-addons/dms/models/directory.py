@@ -427,7 +427,7 @@ class DmsDirectory(models.Model):
             "DMS DIRECTORY name_search START: name=%r args=%r operator=%s limit=%d uid=%s context=%r",
             name, args, operator, limit, self.env.uid, self.env.context,
         )
-        result = super().name_search(name=name, args=args, operator=operator, limit=limit)
+        result = super().name_search(name=name, domain=args, operator=operator, limit=limit)
         _logger.info(
             "DMS DIRECTORY name_search RESULT: found %d directories: %r",
             len(result), result,
