@@ -12,19 +12,38 @@ import {useService} from "@web/core/utils/hooks";
 export class PreviewRecordField extends BinaryField {
     setup() {
         super.setup();
-        this.store = useService("mail.store");
+        try {
+            this.store = useService("mail.store");
+        } catch (error) {
+            console.warn("Mail store service not available:", error);
+            this.store = null;
+        }
         this.fileViewer = useFileViewer();
     }
 
     onFilePreview() {
         const self = this;
-        const attachment = this.store.Attachment.insert({
-            id: self.props.record.resId,
-            filename: self.props.record.data.display_name || "",
-            name: self.props.record.data.display_name || "",
-            mimetype: self.props.record.data.mimetype,
-            model_name: self.props.record.resModel,
-        });
+        
+        let attachment;
+        if (this.store && this.store.Attachment && this.store.Attachment.insert) {
+            attachment = this.store.Attachment.insert({
+                id: self.props.record.resId,
+                filename: self.props.record.data.display_name || "",
+                name: self.props.record.data.display_name || "",
+                mimetype: self.props.record.data.mimetype,
+                model_name: self.props.record.resModel,
+            });
+        } else {
+            attachment = {
+                id: self.props.record.resId,
+                filename: self.props.record.data.display_name || "",
+                name: self.props.record.data.display_name || "",
+                mimetype: self.props.record.data.mimetype,
+                model_name: self.props.record.resModel,
+                defaultSource: `/web/content?id=${self.props.record.resId}&field=content&model=dms.file&filename_field=name`,
+                downloadUrl: `/web/content?id=${self.props.record.resId}&field=content&model=dms.file&filename_field=name&download=true`,
+            };
+        }
         this.fileViewer.open(attachment);
     }
 }
