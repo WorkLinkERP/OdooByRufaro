@@ -25,18 +25,18 @@ class ResUsers(models.Model):
         viewer = self.env.ref('dms.group_dms_viewer')
         editor = self.env.ref('dms.group_dms_user')
         admin = self.env.ref('dms.group_dms_manager')
-        all_dms_groups = viewer | editor | admin
-        
+        all_dms_groups = [viewer, editor, admin]
+
+        role_map = {
+            'viewer': viewer,
+            'editor': editor,
+            'admin': admin,
+        }
+
         for user in self:
-            current_groups = user.groups_id
-            new_groups = current_groups - all_dms_groups
-            
-            if user.dms_role == 'viewer':
-                new_groups |= viewer
-            elif user.dms_role == 'editor':
-                new_groups |= editor
-            elif user.dms_role == 'admin':
-                new_groups |= admin
-            
-            if new_groups != current_groups:
-                user.groups_id = new_groups
+            target_group = role_map.get(user.dms_role)
+            for group in all_dms_groups:
+                if group == target_group:
+                    group.sudo().write({'users': [(4, user.id)]})
+                else:
+                    group.sudo().write({'users': [(3, user.id)]})
