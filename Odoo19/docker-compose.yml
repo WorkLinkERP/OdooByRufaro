@@ -32,8 +32,7 @@ services:
       - "traefik.http.services.odoo-ws.loadbalancer.server.port=8072"
       - "traefik.http.middlewares.https_redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https_redirect.redirectscheme.permanent=true"
-      - "traefik.http.middlewares.gzip.compress=true"
-      - "traefik.http.routers.odoo19.middlewares=gzip,https_redirect"
+      - "traefik.http.routers.odoo19.middlewares=https_redirect"
     depends_on:
       - odoodb
     networks:
