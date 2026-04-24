@@ -67,11 +67,11 @@ export function createFileUploadExtension() {
             this.notification = useService("notification");
             this.orm = useService("orm");
             this.http = useService("http");
-            this.fileInput = useRef("fileInput");
+            this.fileInput = useRef("uploadFileInput");
 
             useBus(this.env.bus, "change_file_input", async (ev) => {
                 this.fileInput.el.files = ev.detail.files;
-                await this.onChangeFileInput();
+                await this.onFileInputChange();
             });
         },
 
@@ -79,7 +79,7 @@ export function createFileUploadExtension() {
             this.fileInput.el.click();
         },
 
-        async onChangeFileInput() {
+        async onFileInputChange() {
             const params = {
                 csrf_token: odoo.csrf_token,
                 ufile: [...this.fileInput.el.files],

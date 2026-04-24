@@ -16,7 +16,7 @@
             <button
                 type="button"
                 t-attf-class="btn btn-primary o_file_kanban_upload"
-                t-on-click.stop.prevent="() => this.uploadFileInputRef.el.click()"
+                t-on-click.stop.prevent="uploadDocument"
             >
                 Upload
             </button>
