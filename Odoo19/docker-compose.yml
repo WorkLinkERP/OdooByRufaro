@@ -29,10 +29,12 @@ services:
       - "traefik.http.routers.odoo19-ws.entrypoints=websecure"
       - "traefik.http.routers.odoo19-ws.tls.certresolver=letsencrypt"
       - "traefik.http.routers.odoo19-ws.service=odoo-ws"
+      - "traefik.http.routers.odoo19-ws.middlewares=disable-compression"
       - "traefik.http.services.odoo-ws.loadbalancer.server.port=8072"
       - "traefik.http.middlewares.https_redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https_redirect.redirectscheme.permanent=true"
-      - "traefik.http.routers.odoo19.middlewares=https_redirect"
+      - "traefik.http.middlewares.disable-compression.headers.customresponseheaders.Content-Encoding="
+      - "traefik.http.routers.odoo19.middlewares=https_redirect,disable-compression"
     depends_on:
       - odoodb
     networks:
