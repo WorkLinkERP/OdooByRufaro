@@ -55,22 +55,22 @@ services:
     networks:
       - dokploy-network
 
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4:8
-    restart: unless-stopped
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      - odoodb
-    networks:
-      - dokploy-network
+  # pgadmin:
+  #   container_name: pgadmin
+  #   image: dpage/pgadmin4:8
+  #   restart: unless-stopped
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=admin@example.com
+  #     - PGADMIN_DEFAULT_PASSWORD=admin
+  #     - PGADMIN_CONFIG_SERVER_MODE=False
+  #   ports:
+  #     - "5057:80"
+  #   volumes:
+  #     - pgadmin-data:/var/lib/pgadmin
+  #   depends_on:
+  #     - odoodb
+  #   networks:
+  #     - dokploy-network
 
 volumes:
   dbdata:
