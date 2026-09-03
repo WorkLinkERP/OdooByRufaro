@@ -1,0 +1,3 @@
+[submodule "Odoo19/odoo_config/custom-addons/mykargolink_account_sync"]
+	path = Odoo19/odoo_config/custom-addons/mykargolink_account_sync
+	url = https://github.com/WorkLinkERP/mykargolink_account_sync.git
